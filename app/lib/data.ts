@@ -16,10 +16,9 @@ export async function fetchRevenue() {
     // Don't do this in production :)
 
     // console.log('Fetching revenue data...');
-    // await new Promise((resolve) => setTimeout(resolve, 3000));
+     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     const data = await supabase.from("revenue").select("month, revenue");
-    console.log(data.data)
 
     return data.data;
   } catch (error) {
@@ -30,17 +29,49 @@ export async function fetchRevenue() {
 
 export async function fetchLatestInvoices() {
   try {
-    const data = await sql<LatestInvoiceRaw>`
-      SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
-      FROM invoices
-      JOIN customers ON invoices.customer_id = customers.id
-      ORDER BY invoices.date DESC
-      LIMIT 5`;
+    // Consulta manual para obtener datos de ambas tablas
+    const { data, error } = await supabase
+      .from('invoices')
+      .select(`
+        amount, 
+        id,
+        customer_id, 
+        date
+      `)
+      .order('date', { ascending: false })
+      .limit(5);
 
-    const latestInvoices = data.rows.map((invoice) => ({
-      ...invoice,
-      amount: formatCurrency(invoice.amount),
-    }));
+    if (error) {
+      throw new Error('Supabase query failed: ' + error.message);
+    }
+
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    // Obtener los datos de los clientes relacionados manualmente
+    const customerIds = data.map((invoice) => invoice.customer_id);
+    const { data: customers, error: customerError } = await supabase
+      .from('customers')
+      .select('id, name, email, image_url')
+      .in('id', customerIds);
+
+    if (customerError) {
+      throw new Error('Failed to fetch customers: ' + customerError.message);
+    }
+
+    // Combinar las facturas con los datos de los clientes
+    const latestInvoices = data.map((invoice) => {
+      const customer = customers.find((c) => c.id === invoice.customer_id);
+      return {
+        id: invoice.id,
+        amount: formatCurrency(invoice.amount),
+        name: customer?.name,
+        email: customer?.email,
+        image_url: customer?.image_url,
+      };
+    });
+
     return latestInvoices;
   } catch (error) {
     console.error('Database Error:', error);
