@@ -5,17 +5,15 @@ import Search from "@/app/ui/search";
 import { InvoicesTableSkeleton } from "@/app/ui/skeletons";
 import { Suspense } from "react";
 
-export default async function Page({
-    searchParams,
-  }: {
+export default async function Page(props: {
     searchParams?: {
       query?: string;
       page?: string;
     };
   }) {
-    const searchParamsUp = searchParams || {};
-    const query = searchParamsUp?.query || '';
-    const currentPage = Number(searchParamsUp?.page) || 1;
+    const resolvedSearchParams = await props.searchParams;
+    const query = resolvedSearchParams?.query || '';
+    const currentPage = Number(resolvedSearchParams?.page) || 1;
   
     return (
       <div className="w-full">

@@ -52,7 +52,7 @@ dependencies:
     specifier: 5.5.2
     version: 5.5.2
   use-debounce:
-    specifier: ^10.0.1
+    specifier: ^10.0.4
     version: 10.0.4(react@19.0.0-rc-cd22717c-20241013)
   zod:
     specifier: ^3.23.8

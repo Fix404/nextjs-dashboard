@@ -135,38 +135,47 @@ export async function fetchFilteredInvoices(
   try {
     // Construye la consulta OR para filtrar por múltiples campos.
     const filterCondition = query
-  ? `
-    name.ilike.%${query}%,
-    email.ilike.%${query}%,
-    amount::text.ilike.%${query}%,
-    date::text.ilike.%${query}%,
-    status.ilike.%${query}%
-  `
-      .replace(/\s+/g, '')
-      .trim()
-  : null;
+      ? `
+        name.ilike.%${query}%,
+        email.ilike.%${query}%,
+        amount::text.ilike.%${query}%,
+        date::text.ilike.%${query}%,
+        status.ilike.%${query}%
+      `
+        .replace(/\s+/g, '')
+        .trim()
+      : null;
 
-  const { data, error } = await supabase
-  .from('invoices')
-  .select(`
-    id,
-    amount,
-    date,
-    status,
-    customers (
-      name,
-      email,
-      image_url
-    )
-  `)
-  .order('date', { ascending: false })
-  .range(offset, offset + ITEMS_PER_PAGE - 1);
+    // Construye la consulta a Supabase
+    const baseQuery = supabase
+      .from('invoices')
+      .select(`
+        id,
+        amount,
+        date,
+        status,
+        customers (
+          name,
+          email,
+          image_url
+        )
+      `)
+      .order('date', { ascending: false })
+      .range(offset, offset + ITEMS_PER_PAGE - 1);
 
-if (error) {
-  console.error('Supabase Error:', error);
-  throw new Error('Failed to fetch invoices.');
-}
+    // Aplica el filtro si existe un query
+    if (filterCondition) {
+      baseQuery.or(filterCondition);
+    }
 
+    const { data, error } = await baseQuery;
+
+    if (error) {
+      console.error('Supabase Error:', error);
+      throw new Error('Failed to fetch invoices.');
+    }
+
+    console.log('Fetched Invoices:', data);
     return data;
   } catch (error) {
     console.error('Database Error:', error);
