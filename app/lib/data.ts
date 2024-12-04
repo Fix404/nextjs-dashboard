@@ -135,16 +135,14 @@ export async function fetchFilteredInvoices(
   try {
     // Construye la consulta OR para filtrar por múltiples campos.
     const filterCondition = query
-      ? `
-        name.ilike.%${query}%,
-        email.ilike.%${query}%,
-        amount::text.ilike.%${query}%,
-        date::text.ilike.%${query}%,
-        status.ilike.%${query}%
-      `
-        .replace(/\s+/g, '')
-        .trim()
-      : null;
+  ? `(
+      customers.name.ilike.%${query}%,
+      customers.email.ilike.%${query}%,
+      amount::text.ilike.%${query}%,
+      date::text.ilike.%${query}%,
+      status.ilike.%${query}%
+    )`
+  : null;
 
     // Construye la consulta a Supabase
     const baseQuery = supabase
